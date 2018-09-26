@@ -1,0 +1,469 @@
+package main
+
+import (
+	"bytes"
+	"database/sql"
+	"fmt"
+	"net/http"
+	"log"
+	"time"
+
+    "golang.org/x/crypto/bcrypt"
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+)
+
+func main() {
+	// db, err := sql.Open("mysql", "root:Mahagedara2016@@tcp(127.0.0.1:3306)/intelliplat")
+	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/hopeip")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	defer db.Close()
+	// make sure connection is available
+	err = db.Ping()
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	type Person struct {
+		Id         int
+		First_Name string
+		Last_Name  string
+	}
+
+	type User struct {
+		Id         int
+		First_Name  string
+		Last_Name   string
+		Email       string
+		Password    string
+		Created_at  string 
+		Updated_at  string
+		Deleted_at  string
+		Status      int
+	}
+
+	router := gin.Default()
+
+	// GET a person detail
+	router.GET("/person/:id", func(c *gin.Context) {
+		var (
+			person Person
+			result gin.H
+		)
+		id := c.Param("id")
+		row := db.QueryRow("select id, first_name, last_name from person where id = ?;", id)
+		err = row.Scan(&person.Id, &person.First_Name, &person.Last_Name)
+		if err != nil {
+			// If no results send null
+			result = gin.H{
+				"result": nil,
+				"count":  0,
+			}
+		} else {
+			result = gin.H{
+				"result": person,
+				"count":  1,
+			}
+		}
+		c.JSON(http.StatusOK, result)
+	})
+
+	// GET all persons
+	router.GET("/persons", func(c *gin.Context) {
+		fmt.Print("testx")
+		var (
+			person  Person
+			persons []Person
+		)
+		rows, err := db.Query("select id, first_name, last_name from person;")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&person.Id, &person.First_Name, &person.Last_Name)
+			persons = append(persons, person)
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": persons,
+			"count":  len(persons),
+		})
+	})
+
+	// POST new ip_user details
+	router.POST("/newuser", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		var errorstatus int
+
+		first_name := c.PostForm("first_name")
+		last_name  := c.PostForm("last_name")
+		email      := c.PostForm("email")
+		// password   := c.PostForm("password")
+		// set the password as a byte slice
+		bytepassword := []byte(c.PostForm("password"))
+		hash := hashAndSalt(bytepassword)
+
+		// pwd2 := []byte(c.PostForm("password"))
+		// pwdMatch := comparePasswords(hash, pwd2)
+		// fmt.Println(pwdMatch)
+		currentTime := time.Now()
+		created_at  := currentTime.Format("2006-01-02 15:04:05")
+		status      := 1
+
+		stmt, err := db.Prepare("insert into ip_users (first_name, last_name, email, password, created_at, status) values(?,?,?,?,?,?);")
+		if err != nil {
+			fmt.Print(err.Error())
+			errorstatus = 1
+		}
+		_, err = stmt.Exec(first_name, last_name, email, hash, created_at, status)
+
+		if err != nil {
+			fmt.Print(err.Error())
+			errorstatus = 1
+		}
+
+		// Fastest way to append strings
+		if errorstatus == 0 {
+		buffer.WriteString("Success ")
+		buffer.WriteString(first_name)
+		buffer.WriteString(" ")
+		buffer.WriteString(last_name)
+		}else{
+		buffer.WriteString("error")	
+		}
+		defer stmt.Close()
+		name := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(name),
+		})
+	})
+
+	
+
+	// user login funtion
+	router.POST("/userlogin", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		// var errorstatus int
+
+		email      := c.PostForm("email")
+		passwordx  := c.PostForm("password")
+
+		// fmt.Println(email)
+		// fmt.Println(password)
+
+		// var ip_id, ip_email, ip_password string
+
+ // where email = ?;", email)
+		// err := db.QueryRow("select id, email, password from ip_users;")
+		// err  = row.Scan( ip_id , ip_email, ip_password)
+		selDB, err := db.Query("SELECT id, email, password FROM ip_users WHERE email=?", email)
+		if err != nil {
+			// If no results send null
+			fmt.Println("no results")
+		} else {
+		    for selDB.Next(){
+		        var id int
+		        var email, password string
+		        err = selDB.Scan(&id, &email, &password)
+		        if err != nil {
+		            fmt.Println(err)
+		        }
+			pwd2 := []byte(passwordx)
+			pwdMatch := comparePasswords(password, pwd2)
+			if pwdMatch == true {
+				buffer.WriteString("Successfully logged in")
+			} else {
+				buffer.WriteString("invalid username or password !")
+			}
+		name := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(name),
+		})
+		    }
+		}
+		// c.JSON(http.StatusOK, result)
+
+	})
+
+	// get all user data
+	router.POST("/viewusers", func(c *gin.Context) {
+		fmt.Print("testx")
+		var (
+			user  User
+			users []User
+		)
+		rows, err := db.Query("select id, first_name, last_name, email, password, created_at, updated_at, deleted_at, status from ip_users;")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&user.Id, &user.First_Name, &user.Last_Name, &user.Email, &user.Password, &user.Created_at, &user.Updated_at, &user.Deleted_at, &user.Status)
+			users = append(users, user)
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": users,
+			"count":  len(users),
+		})
+	})
+
+	// update users
+	router.POST("/updateusers", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		var errorstatus bool
+
+		user_id           := c.PostForm("user_id")
+		first_name        := c.PostForm("first_name")
+		last_name         := c.PostForm("last_name")
+		current_email     := c.PostForm("current_email")
+		current_password  := c.PostForm("current_password")
+		new_email         := c.PostForm("new_email")
+		new_password      := c.PostForm("new_password")
+		confirm_password  := c.PostForm("confirm_password")
+
+		bytepassword := []byte(c.PostForm("new_password"))
+		hash := hashAndSalt(bytepassword)
+
+		if user_id == "" {
+			buffer.WriteString("enter user id")
+		} else if first_name == "" {
+			buffer.WriteString("enter first name")
+		} else if last_name == "" {
+				buffer.WriteString("enter last name")
+			} else if current_email == "" {
+				buffer.WriteString("enter current email")
+			} else if current_password == "" {
+					buffer.WriteString("enter current password")
+				} else if new_email == "" {
+						buffer.WriteString("enter new email")
+					} else if new_password == "" {
+						buffer.WriteString("enter new password")
+					} else if confirm_password == "" {	
+							buffer.WriteString("enter password confirm")
+						} else if new_password != confirm_password{
+							buffer.WriteString("new password not match")
+						}
+
+		selDB, err := db.Query("SELECT id, email, password FROM ip_users WHERE email=?", current_email)
+		if err != nil {
+			// If no results send null
+			fmt.Println("no results")
+		} else {
+		for selDB.Next(){
+		        var id int
+		        var email, password string
+		        err = selDB.Scan(&id, &email, &password)
+		        if err != nil {
+		            fmt.Println(err)
+		        }
+			pwd2 := []byte(current_password)
+			pwdMatch := comparePasswords(password, pwd2)
+
+			if pwdMatch == true {
+				
+				stmt, err := db.Prepare("update ip_users set first_name= ?, last_name= ?,email= ?, password= ?  where id= ?;")
+				if err != nil {
+					fmt.Print(err.Error())
+					errorstatus = true
+				}
+				_, err = stmt.Exec(first_name, last_name, new_email, hash, id)
+				if err != nil {
+					fmt.Print(err.Error())
+					errorstatus = true
+				}
+
+				if(errorstatus){
+					buffer.WriteString("error on update !")
+					}else{
+					buffer.WriteString("Successfully updated")	
+					}
+
+			} else {
+				buffer.WriteString("invalid username or password !")
+			}
+		}
+		}
+
+
+		name := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(name),
+		})
+	})
+
+
+	// Set user Roles
+
+	router.POST("/setUserRole", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		var errorstatus int
+		user_id    := c.PostForm("user_id")
+		role_id    := c.PostForm("role_id")
+
+		stmt, err := db.Prepare("insert into ip_user_user_role (ip_users_id, ip_user_role_id) values(?,?);")
+		if err != nil {
+			fmt.Print(err.Error())
+			errorstatus = 1
+		}
+		_, err = stmt.Exec(user_id, role_id)
+
+		if err != nil {
+			fmt.Print(err.Error())
+			errorstatus = 1
+		}
+
+		// Fastest way to append strings
+		if errorstatus == 0 {
+		buffer.WriteString("Success ")
+		}else{
+		buffer.WriteString("error")	
+		}
+		defer stmt.Close()
+		name := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(name),
+		})
+	})
+
+	router.POST("/setSupplierDetails", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		var errorstatus int
+		user_id          := c.PostForm("user_id")
+		address_line1    := c.PostForm("address_line1")
+		address_line2    := c.PostForm("address_line2")
+		address_line3    := c.PostForm("address_line3")
+		address_line4    := c.PostForm("address_line4")
+		postal_code      := c.PostForm("postal_code")
+		contact_land     := c.PostForm("contact_land")
+		contact_mobile   := c.PostForm("contact_mobile")
+
+		currentTime      := time.Now()
+		created_at       := currentTime.Format("2006-01-02 15:04:05")
+		status           := 1
+
+		if user_id == ""{
+			buffer.WriteString("enter user id ")
+			}else if address_line1 == ""{
+				buffer.WriteString("enter address")
+			}else if postal_code == ""{
+				buffer.WriteString("enter postal code")
+				}else if contact_mobile == ""{
+					buffer.WriteString("enter contact mobile")
+					}else{
+
+					stmt, err := db.Prepare("insert into ip_supplier (ip_users_id, address_line1, address_line2, address_line3, address_line4, postal_code, contact_land, contact_mobile, created_at, status) values(?,?,?,?,?,?,?,?,?,?);")
+					if err != nil {
+						fmt.Print(err.Error())
+						errorstatus = 1
+					}
+					_, err = stmt.Exec(user_id, address_line1, address_line2, address_line3, address_line4, postal_code, contact_land, contact_mobile, created_at, status)
+
+					if err != nil {
+						fmt.Print(err.Error())
+						errorstatus = 1
+					}
+
+					// Fastest way to append strings
+					if errorstatus == 0 {
+					buffer.WriteString("Success ")
+					}else{
+					buffer.WriteString("error")	
+					}
+				    defer stmt.Close()
+					}
+		name := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(name),
+		})
+	})
+
+	// set supplier role
+
+	router.POST("/setSupplierRole", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		var errorstatus int
+		supplier_id      := c.PostForm("supplier_id")
+		supplier_role_id := c.PostForm("supplier_role_id")
+
+		stmt, err := db.Prepare("insert into ip_supplier_supplier_role (ip_supplier_id, ip_supplier_role_id) values(?,?);")
+		if err != nil {
+			fmt.Print(err.Error())
+			errorstatus = 1
+		}
+		_, err = stmt.Exec(supplier_id, supplier_role_id)
+
+		if err != nil {
+			fmt.Print(err.Error())
+			errorstatus = 1
+		}
+
+		// Fastest way to append strings
+		if errorstatus == 0 {
+		buffer.WriteString("Success ")
+		}else{
+		buffer.WriteString("error")	
+		}
+		defer stmt.Close()
+		name := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(name),
+		})
+	})
+
+	// Delete resources
+	router.DELETE("/person", func(c *gin.Context) {
+		id := c.Query("id")
+		stmt, err := db.Prepare("delete from person where id= ?;")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		_, err = stmt.Exec(id)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("Successfully deleted user: %s", id),
+		})
+	})
+	router.Run(":3000")
+}
+
+func hashAndSalt(pwd []byte) string {
+    
+    // Use GenerateFromPassword to hash & salt pwd
+    // MinCost is just an integer constant provided by the bcrypt
+    // package along with DefaultCost & MaxCost. 
+    // The cost can be any value you want provided it isn't lower
+    // than the MinCost (4)
+    hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
+    if err != nil {
+        log.Println(err)
+    }
+
+    // GenerateFromPassword returns a byte slice so we need to
+    // convert the bytes to a string and return it
+    return string(hash)
+}
+
+func comparePasswords(hashedPwd string, plainPwd []byte) bool {
+
+    // Since we'll be getting the hashed password from the DB it
+    // will be a string so we'll need to convert it to a byte slice
+    byteHash := []byte(hashedPwd)
+
+    err := bcrypt.CompareHashAndPassword(byteHash, plainPwd)
+    if err != nil {
+        log.Println(err)
+        return false
+    }
+    
+    return true
+
+}

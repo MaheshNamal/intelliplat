@@ -1,0 +1,38 @@
+2018-09-21 16:49:07 [AAA] <nil>
+2018-09-21 16:49:07 [AAA] [GIN-debug] [WARNING] Now Gin requires Go 1.6 or later and Go 1.7 will be required soon.
+
+2018-09-21 16:49:07 [AAA] [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+2018-09-21 16:49:07 [AAA] [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2018-09-21 16:49:07 [AAA] [GIN-debug] POST   /supplier                 --> github.com/intelliplat/handlers/users.Createsupplier (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] GET    /suppliers                --> github.com/intelliplat/handlers/users.Getallsupplier (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] GET    /supplier/:id             --> github.com/intelliplat/handlers/users.Getsupplier (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] DELETE /supplier/:id             --> github.com/intelliplat/handlers/users.DeleteSupplier (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] POST   /consumer                 --> github.com/intelliplat/handlers/users.Createconsumer (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] GET    /consumers                --> github.com/intelliplat/handlers/users.Getallconsumer (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] GET    /consumer/:id             --> github.com/intelliplat/handlers/users.Getconsumer (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] DELETE /consumer/:id             --> github.com/intelliplat/handlers/users.DeleteConsumer (3 handlers)
+2018-09-21 16:49:07 [AAA] [GIN-debug] Listening and serving HTTP on :3000
+2018-09-21 16:49:07 [AAA] [GIN-debug] redirecting request 301: /supplier// --> /supplier/
+2018-09-21 16:49:07 [AAA] [GIN-debug] redirecting request 301: /supplier/ --> /supplier
+2018-09-21 16:53:20 >>> <nil>
+2018-09-21 16:53:20 >>> [GIN-debug] [WARNING] Now Gin requires Go 1.6 or later and Go 1.7 will be required soon.
+
+2018-09-21 16:53:20 >>> [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+2018-09-21 16:53:20 >>> [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2018-09-21 16:53:20 >>> [GIN-debug] POST   /supplier                 --> github.com/intelliplat/handlers/users.Createsupplier (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] GET    /suppliers                --> github.com/intelliplat/handlers/users.Getallsupplier (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] GET    /supplier/:id             --> github.com/intelliplat/handlers/users.Getsupplier (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] DELETE /supplier/:id             --> github.com/intelliplat/handlers/users.DeleteSupplier (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] POST   /consumer                 --> github.com/intelliplat/handlers/users.Createconsumer (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] GET    /consumers                --> github.com/intelliplat/handlers/users.Getallconsumer (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] GET    /consumer/:id             --> github.com/intelliplat/handlers/users.Getconsumer (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] DELETE /consumer/:id             --> github.com/intelliplat/handlers/users.DeleteConsumer (3 handlers)
+2018-09-21 16:53:20 >>> [GIN-debug] Listening and serving HTTP on :3000
