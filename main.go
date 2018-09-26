@@ -25,7 +25,7 @@ func init() {
 func main() {
     router := gin.Default()
     
-    // handlers.Handler()//
+    // handlers.Handler()////
 
     router.POST("/supplier", users.Createsupplier)
 	router.GET("/suppliers", users.Getallsupplier)
